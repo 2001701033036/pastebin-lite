@@ -1,17 +1,7 @@
 import { NextResponse } from "next/server";
-//import { kv } from "@vercel/kv";
 import { Redis } from "@upstash/redis";
 
 const redis = Redis.fromEnv();
-
-
-function getNow(req: Request) {
-  if (process.env.TEST_MODE === "1") {
-    const h = req.headers.get("x-test-now-ms");
-    if (h) return Number(h);
-  }
-  return Date.now();
-}
 
 export async function GET(
   req: Request,
@@ -19,17 +9,13 @@ export async function GET(
 ) {
   try {
     const key = `paste:${params.id}`;
-    //const paste: any = await kv.get(key);
     const paste: any = await redis.get(key);
-
-
-
 
     if (!paste) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const now = getNow(req);
+    const now = Date.now();
 
     if (paste.expiresAt && now >= paste.expiresAt) {
       return NextResponse.json({ error: "Expired" }, { status: 404 });
@@ -44,9 +30,7 @@ export async function GET(
       }
 
       paste.remainingViews -= 1;
-      //await kv.set(key, paste);
       await redis.set(key, paste);
-
     }
 
     return NextResponse.json({
@@ -57,7 +41,7 @@ export async function GET(
         : null,
     });
   } catch (err) {
-    console.error("GET paste error:", err);
+    console.error("GET error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
