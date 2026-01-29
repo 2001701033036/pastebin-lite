@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
+//import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
+
 
 function getNow(req: Request) {
   if (process.env.TEST_MODE === "1") {
@@ -15,7 +19,11 @@ export async function GET(
 ) {
   try {
     const key = `paste:${params.id}`;
-    const paste: any = await kv.get(key);
+    //const paste: any = await kv.get(key);
+    const paste: any = await redis.get(key);
+
+
+
 
     if (!paste) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -36,7 +44,9 @@ export async function GET(
       }
 
       paste.remainingViews -= 1;
-      await kv.set(key, paste);
+      //await kv.set(key, paste);
+      await redis.set(key, paste);
+
     }
 
     return NextResponse.json({

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
+
 import { nanoid } from "nanoid";
 
 export async function POST(req: Request) {
@@ -31,7 +34,9 @@ export async function POST(req: Request) {
     };
 
     // 
-    await kv.set(`paste:${id}`, paste);
+    //await kv.set(`paste:${id}`, paste);
+    await redis.set(`paste:${id}`, paste);
+
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
 
