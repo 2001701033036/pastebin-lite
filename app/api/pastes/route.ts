@@ -7,7 +7,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { content, ttl_seconds, max_views } = body;
 
-    // ✅ Validation
     if (!content || typeof content !== "string" || !content.trim()) {
       return NextResponse.json({ error: "Invalid content" }, { status: 400 });
     }
@@ -31,16 +30,10 @@ export async function POST(req: Request) {
       createdAt: now,
     };
 
-    //await kv.set(`paste:${id}`, paste);
-    if (process.env.KV_REST_API_URL) {
-  await kv.set(`paste:${id}`, paste);
-}
+    // 
+    await kv.set(`paste:${id}`, paste);
 
-
-    //const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
-
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
 
     return NextResponse.json({
       id,
