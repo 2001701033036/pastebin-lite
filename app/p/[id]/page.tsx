@@ -1,53 +1,35 @@
-import { NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
+import { notFound } from "next/navigation";
 
-function getNow(req: Request) {
-  if (process.env.TEST_MODE === "1") {
-    const h = req.headers.get("x-test-now-ms");
-    if (h) return Number(h);
-  }
-  return Date.now();
+async function getPaste(id: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
+
+  const res = await fetch(`${baseUrl}/api/pastes/${id}`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) return null;
+
+  return res.json();
 }
 
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const key = `paste:${params.id}`;
-    const paste: any = await kv.get(key);
+export default async function PastePage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const data = await getPaste(params.id);
 
-    if (!paste) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+  if (!data) return notFound();
 
-    const now = getNow(req);
+  return (
+    <main className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+      <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl p-6">
+        <h2 className="text-xl font-bold mb-4">Your Paste</h2>
 
-    if (paste.expiresAt && now >= paste.expiresAt) {
-      return NextResponse.json({ error: "Expired" }, { status: 404 });
-    }
-
-    if (paste.remainingViews !== null) {
-      if (paste.remainingViews <= 0) {
-        return NextResponse.json(
-          { error: "View limit exceeded" },
-          { status: 404 }
-        );
-      }
-
-      paste.remainingViews -= 1;
-      await kv.set(key, paste);
-    }
-
-    return NextResponse.json({
-      content: paste.content,
-      remaining_views: paste.remainingViews,
-      expires_at: paste.expiresAt
-        ? new Date(paste.expiresAt).toISOString()
-        : null,
-    });
-  } catch (err) {
-    console.error("GET paste error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
+        <pre className="bg-slate-100 p-4 rounded-lg whitespace-pre-wrap text-sm">
+          {data.content}
+        </pre>
+      </div>
+    </main>
+  );
 }
