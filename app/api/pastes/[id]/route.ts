@@ -6,12 +6,16 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN!,
 });
 
+type Params = {
+  id: string;
+};
+
 export async function GET(
   req: Request,
-  context: { params: { id: string } }
+  context: { params: Params }
 ) {
   try {
-    const { id } = context.params; // ✅ FIX HERE
+    const { id } = context.params; // ✅ THIS IS CRITICAL
 
     const key = `paste:${id}`;
     const paste: any = await redis.get(key);
@@ -45,8 +49,11 @@ export async function GET(
         ? new Date(paste.expiresAt).toISOString()
         : null,
     });
-  } catch (err) {
-    console.error("GET error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (error) {
+    console.error("GET paste error:", error);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
 }
