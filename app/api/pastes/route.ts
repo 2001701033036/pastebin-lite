@@ -1,47 +1,42 @@
 import { NextResponse } from "next/server";
+import { nanoid } from "nanoid";
 import { Redis } from "@upstash/redis";
 
-const redis = Redis.fromEnv();
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: Request) {
   try {
-    const key = `paste:${params.id}`;
-    const paste: any = await redis.get(key);
+    const body = await req.json();
+    const { content, ttl_seconds, max_views } = body;
 
-    if (!paste) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!content || typeof content !== "string" || !content.trim()) {
+      return NextResponse.json({ error: "Invalid content" }, { status: 400 });
     }
 
+    const id = nanoid(8);
     const now = Date.now();
+    const expiresAt = ttl_seconds ? now + ttl_seconds * 1000 : null;
 
-    if (paste.expiresAt && now >= paste.expiresAt) {
-      return NextResponse.json({ error: "Expired" }, { status: 404 });
-    }
+    const paste = {
+      content,
+      expiresAt,
+      remainingViews: max_views ?? null,
+      createdAt: now,
+    };
 
-    if (paste.remainingViews !== null) {
-      if (paste.remainingViews <= 0) {
-        return NextResponse.json(
-          { error: "View limit exceeded" },
-          { status: 404 }
-        );
-      }
+    await redis.set(`paste:${id}`, paste);
 
-      paste.remainingViews -= 1;
-      await redis.set(key, paste);
-    }
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
 
     return NextResponse.json({
-      content: paste.content,
-      remaining_views: paste.remainingViews,
-      expires_at: paste.expiresAt
-        ? new Date(paste.expiresAt).toISOString()
-        : null,
+      id,
+      url: `${baseUrl}/p/${id}`,
     });
   } catch (err) {
-    console.error("GET error:", err);
+    console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
