@@ -19,7 +19,7 @@ export default function Home() {
     if (views) body.max_views = Number(views);
 
     try {
-      const res = await fetch("/api/pastes", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pastes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

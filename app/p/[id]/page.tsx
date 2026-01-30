@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 async function getPaste(id: string) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/pastes/${id}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/pastes/${id}`,
     { cache: "no-store" }
   );
 
