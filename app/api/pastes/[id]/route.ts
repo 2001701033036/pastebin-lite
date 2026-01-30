@@ -8,10 +8,12 @@ const redis = new Redis({
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const key = `paste:${params.id}`;
+    const { id } = context.params; // ✅ FIX HERE
+
+    const key = `paste:${id}`;
     const paste: any = await redis.get(key);
 
     if (!paste) {
@@ -44,7 +46,7 @@ export async function GET(
         : null,
     });
   } catch (err) {
-    console.error(err);
+    console.error("GET error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
