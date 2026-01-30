@@ -3,13 +3,10 @@ import { Redis } from "@upstash/redis";
 
 const redis = Redis.fromEnv();
 
-type Context = {
-  params: {
-    id: string;
-  };
-};
-
-export async function GET(req: Request, context: Context) {
+export async function GET(
+  req: Request,
+  context: { params: { id: string } }
+) {
   try {
     const { id } = context.params;
     const key = `paste:${id}`;
