@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
-import { nanoid } from "nanoid";
 import { Redis } from "@upstash/redis";
+import { nanoid } from "nanoid";
 
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
+const redis = Redis.fromEnv();
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { content, ttl_seconds, max_views } = body;
+    const { content, ttl_seconds, max_views } = await req.json();
 
     if (!content || typeof content !== "string" || !content.trim()) {
       return NextResponse.json({ error: "Invalid content" }, { status: 400 });
@@ -35,8 +31,7 @@ export async function POST(req: Request) {
       id,
       url: `${baseUrl}/p/${id}`,
     });
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
